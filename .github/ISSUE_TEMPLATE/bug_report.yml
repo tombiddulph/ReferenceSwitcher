@@ -1,0 +1,42 @@
+name: Bug report
+description: Report incorrect switching, restoration, discovery, or Rider behavior
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Plugin version
+    validations:
+      required: true
+  - type: input
+    id: rider
+    attributes:
+      label: Rider version
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+    validations:
+      required: true
+  - type: textarea
+    id: project
+    attributes:
+      label: Relevant project XML
+      description: Remove proprietary names, paths, and secrets.
+      render: xml
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+    validations:
+      required: true

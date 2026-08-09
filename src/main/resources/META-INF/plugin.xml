@@ -1,0 +1,49 @@
+<idea-plugin url="https://github.com/tombiddulph/ReferenceSwitcher">
+    <id>io.github.tombiddulph.referenceswitcher</id>
+    <name>Reference Switcher</name>
+    <vendor email="tombiddulph@gmail.com" url="https://github.com/tombiddulph">Tom Biddulph</vendor>
+
+    <description><![CDATA[
+        Switch a .NET PackageReference to a local ProjectReference from Rider, then restore the exact
+        original package reference when local development is complete. Configure local source roots,
+        discover matching SDK-style projects, and manage active switches without repository configuration.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.rider</depends>
+    <depends>com.intellij.modules.xml</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="io.github.tombiddulph.referenceswitcher.state.ReferenceSwitcherSettings"/>
+        <projectService serviceImplementation="io.github.tombiddulph.referenceswitcher.state.ActiveSwitchService"/>
+        <projectService serviceImplementation="io.github.tombiddulph.referenceswitcher.discovery.ProjectDiscoveryService"/>
+        <projectService serviceImplementation="io.github.tombiddulph.referenceswitcher.service.ReferenceSwitcherService"/>
+        <applicationConfigurable
+                parentId="tools"
+                id="io.github.tombiddulph.referenceswitcher.settings"
+                displayName="Local References"
+                instance="io.github.tombiddulph.referenceswitcher.ui.ReferenceSwitcherConfigurable"/>
+        <postStartupActivity implementation="io.github.tombiddulph.referenceswitcher.startup.ReferenceSwitcherStartupActivity"/>
+    </extensions>
+
+    <actions>
+        <action id="ReferenceSwitcher.UseLocalProject"
+                class="io.github.tombiddulph.referenceswitcher.actions.UseLocalProjectAction"
+                text="Use Local Project..."
+                description="Replace a package reference with a local project reference">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
+        <action id="ReferenceSwitcher.RestorePackage"
+                class="io.github.tombiddulph.referenceswitcher.actions.RestorePackageReferenceAction"
+                text="Restore Package Reference"
+                description="Restore the original package reference">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
+        <action id="ReferenceSwitcher.OpenWindow"
+                class="io.github.tombiddulph.referenceswitcher.actions.OpenLocalReferencesAction"
+                text="Local References..."
+                description="Manage local project references">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+    </actions>
+</idea-plugin>
