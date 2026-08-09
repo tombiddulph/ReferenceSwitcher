@@ -20,7 +20,7 @@ jobs:
           cache: gradle
       - uses: gradle/actions/setup-gradle@v5
       - run: ./gradlew test buildPlugin verifyPlugin
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: rider-reference-switcher
           path: build/distributions/*.zip
