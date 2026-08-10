@@ -97,3 +97,20 @@ jobs:
           path: build/distributions
       - name: Verify plugin compatibility
         run: ./gradlew verifyPlugin -PverifierRiderVersion=${{ matrix.rider }}
+
+  required:
+    name: Build required
+    if: ${{ always() }}
+    needs: [test, package, verify]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require all build jobs
+        env:
+          TEST_RESULT: ${{ needs.test.result }}
+          PACKAGE_RESULT: ${{ needs.package.result }}
+          VERIFY_RESULT: ${{ needs.verify.result }}
+        run: |
+          test "$TEST_RESULT" = "success"
+          test "$PACKAGE_RESULT" = "success"
+          test "$VERIFY_RESULT" = "success"
