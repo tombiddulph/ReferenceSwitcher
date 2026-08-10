@@ -5,30 +5,127 @@ on:
     tags: ["v*"]
 
 permissions:
-  contents: write
+  contents: read
+
+env:
+  JAVA_VERSION: "21"
 
 jobs:
-  release:
+  test:
+    name: Test release
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - name: Check out source
+        uses: actions/checkout@v7
+      - name: Set up Java
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 21
+          java-version: ${{ env.JAVA_VERSION }}
           cache: gradle
-      - uses: gradle/actions/setup-gradle@v6
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Check tag version
         run: |
           VERSION=$(perl -ne 'print $1 if /^version = "(.+)"/' build.gradle.kts)
           test "v$VERSION" = "$GITHUB_REF_NAME"
-      - run: ./gradlew test buildPlugin verifyPlugin
+      - name: Run tests
+        run: ./gradlew test
+
+  package:
+    name: Package release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+      - name: Build plugin ZIP
+        run: ./gradlew buildPlugin
+      - name: Upload plugin ZIP
+        uses: actions/upload-artifact@v7
+        with:
+          name: rider-reference-switcher
+          path: build/distributions/*.zip
+          if-no-files-found: error
+
+  verify:
+    name: Verify Rider ${{ matrix.rider }}
+    needs: package
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        rider:
+          - "2025.1.7"
+          - "2025.2.6.1"
+          - "2025.3.5"
+          - "2026.1.5"
+          - "2026.2.0.2"
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+      - name: Download plugin ZIP
+        uses: actions/download-artifact@v8
+        with:
+          name: rider-reference-switcher
+          path: build/distributions
+      - name: Verify plugin compatibility
+        run: ./gradlew verifyPlugin -PverifierRiderVersion=${{ matrix.rider }}
+
+  release:
+    name: Create GitHub release
+    needs: [test, package, verify]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download plugin ZIP
+        uses: actions/download-artifact@v8
+        with:
+          name: rider-reference-switcher
+          path: build/distributions
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" build/distributions/*.zip --generate-notes --verify-tag
+        run: gh release create "$GITHUB_REF_NAME" build/distributions/*.zip --repo "$GITHUB_REPOSITORY" --generate-notes --verify-tag
+
+  publish:
+    name: Publish Marketplace update
+    if: ${{ vars.MARKETPLACE_LISTING_READY == 'true' }}
+    needs: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Publish Marketplace update
-        if: ${{ vars.MARKETPLACE_LISTING_READY == 'true' }}
         env:
           PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
           CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}

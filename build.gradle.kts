@@ -58,11 +58,17 @@ intellijPlatform {
     }
     pluginVerification {
         ides {
-            create(IntelliJPlatformType.Rider, "2025.1.7") { useInstaller = false }
-            create(IntelliJPlatformType.Rider, "2025.2.6.1") { useInstaller = false }
-            create(IntelliJPlatformType.Rider, "2025.3.5") { useInstaller = false }
-            create(IntelliJPlatformType.Rider, "2026.1.5") { useInstaller = false }
-            create(IntelliJPlatformType.Rider, "2026.2.0.2") { useInstaller = false }
+            val override = providers.gradleProperty("verifierRiderVersion").orNull
+            val versions = override?.let(::listOf) ?: listOf(
+                "2025.1.7",
+                "2025.2.6.1",
+                "2025.3.5",
+                "2026.1.5",
+                "2026.2.0.2",
+            )
+            versions.forEach { version ->
+                create(IntelliJPlatformType.Rider, version) { useInstaller = false }
+            }
         }
     }
     signing {
