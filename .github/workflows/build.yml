@@ -24,9 +24,13 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
-          cache: gradle
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+          gradle-home-cache-excludes: |
+            caches/modules-2/files-2.1/com.jetbrains.intellij.rider
+            caches/*/transforms
       - name: Run tests
         run: ./gradlew test
 
@@ -42,9 +46,12 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
-          cache: gradle
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-home-cache-excludes: |
+            caches/modules-2/files-2.1/com.jetbrains.intellij.rider
+            caches/*/transforms
       - name: Build plugin ZIP
         run: ./gradlew buildPlugin
       - name: Upload plugin ZIP
@@ -76,9 +83,13 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
-          cache: gradle
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+          gradle-home-cache-excludes: |
+            caches/modules-2/files-2.1/com.jetbrains.intellij.rider
+            caches/*/transforms
       - name: Download plugin ZIP
         uses: actions/download-artifact@v8
         with:

@@ -31,6 +31,8 @@ kotlin {
 }
 
 intellijPlatform {
+    buildSearchableOptions = false
+
     pluginConfiguration {
         id = "io.github.tombiddulph.referenceswitcher"
         name = "Reference Switcher"
