@@ -28,13 +28,33 @@ For a development build:
 
 ## Use
 
-1. Open the consuming `.csproj` in Rider.
-2. Right-click the `PackageReference` you want to replace.
-3. Select **Use Local Project...**.
-4. Choose the matching local `.csproj` if it is not found automatically.
-5. When finished, right-click the consuming `.csproj` and select **Restore Package Reference**.
+### 1. Configure Local Source Roots
 
-The switch changes only the selected XML element. The complete original `PackageReference`, including attributes, child elements, conditions, and formatting, is retained for restore.
+Open **Settings | Tools | Local References** and add the directories that contain your local projects. Reference Switcher scans these roots for SDK-style `.csproj` files and indexes them by package ID.
+
+![Configure local source roots in Rider](docs/images/source-roots.png)
+
+### 2. Switch To A Local Project
+
+Open the consuming `.csproj` in Rider, right-click the `PackageReference`, and select **Use Local Project...**. Reference Switcher uses the indexed package ID to find the corresponding local project. If there are multiple matches, it asks you to choose one; if there are none, it opens a file picker.
+
+The consuming project starts with its NuGet package reference:
+
+![Project using the original NuGet package reference](docs/images/restored-package.png)
+
+Reference Switcher replaces only that XML element with a relative `ProjectReference`:
+
+![Project switched to the local project reference](docs/images/switched-project.png)
+
+### 3. Manage And Restore References
+
+Open **Tools | Local References...** to see active switches. From here you can restore the original package, forget the plugin's tracking state without editing the project, refresh discovered projects, or configure source roots.
+
+![Manage active local references in Rider](docs/images/local-references.png)
+
+When local development is complete, select **Restore Package**. Reference Switcher restores the exact original `PackageReference`, including its attributes, child elements, conditions, and formatting.
+
+The plugin refuses to restore if the managed `ProjectReference` has changed or disappeared, so it does not overwrite unrelated edits.
 
 ## Project Discovery
 
