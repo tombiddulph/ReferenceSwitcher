@@ -4,7 +4,7 @@ Contributions and focused bug reports are welcome.
 
 ## Development
 
-Requirements: JDK 21 and Rider 2026.1.
+Requirements: JDK 21 and Rider 2025.1 or newer.
 
 ```shell
 ./gradlew test buildPlugin verifyPlugin

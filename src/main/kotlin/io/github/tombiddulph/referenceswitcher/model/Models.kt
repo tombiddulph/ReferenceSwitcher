@@ -21,6 +21,13 @@ data class LocalProjectInfo(
     val shipsBuildAssets: Boolean = false,
 )
 
+data class ProjectDiscoveryMetadata(
+    val sdkStyle: Boolean,
+    val properties: Map<String, String>,
+    val packageReferences: List<Pair<String, String>>,
+    val shipsBuildAssets: Boolean,
+)
+
 data class ActiveSwitch(
     var projectFile: String = "",
     var packageId: String = "",

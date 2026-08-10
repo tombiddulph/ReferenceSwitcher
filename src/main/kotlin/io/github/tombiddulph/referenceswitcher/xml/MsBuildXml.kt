@@ -2,6 +2,7 @@ package io.github.tombiddulph.referenceswitcher.xml
 
 import io.github.tombiddulph.referenceswitcher.model.ItemGroupAnchor
 import io.github.tombiddulph.referenceswitcher.model.PackageReferenceInfo
+import io.github.tombiddulph.referenceswitcher.model.ProjectDiscoveryMetadata
 import io.github.tombiddulph.referenceswitcher.model.ReferenceKind
 import io.github.tombiddulph.referenceswitcher.model.SwitchResult
 import org.w3c.dom.Document
@@ -18,6 +19,24 @@ import javax.xml.transform.stream.StreamResult
 import org.xml.sax.InputSource
 
 object MsBuildXml {
+    fun discoveryMetadata(xml: String): ProjectDiscoveryMetadata {
+        val document = parse(xml)
+        val root = document.documentElement
+        val references = itemGroups(document).flatMap { group ->
+            childElements(group, "PackageReference").mapNotNull { element ->
+                element.getAttribute("Include").takeIf(String::isNotBlank)?.let {
+                    it to attributeOrChild(element, "PrivateAssets")
+                }
+            }
+        }
+        return ProjectDiscoveryMetadata(
+            sdkStyle = root.hasAttribute("Sdk") || root.getElementsByTagName("Sdk").length > 0,
+            properties = properties(document),
+            packageReferences = references,
+            shipsBuildAssets = shipsBuildAssets(document),
+        )
+    }
+
     fun packageReferences(xml: String, projectFile: String): List<PackageReferenceInfo> {
         val document = parse(xml)
         val references = itemGroups(document).flatMapIndexed { index, group ->
@@ -114,7 +133,10 @@ object MsBuildXml {
     }
 
     fun properties(xml: String): Map<String, String> {
-        val document = parse(xml)
+        return properties(parse(xml))
+    }
+
+    private fun properties(document: Document): Map<String, String> {
         val result = linkedMapOf<String, String>()
         val groups = document.documentElement.childNodes
         for (i in 0 until groups.length) {
@@ -137,16 +159,19 @@ object MsBuildXml {
     }
 
     fun shipsBuildAssets(xml: String): Boolean = runCatching {
-        val document = parse(xml)
+        shipsBuildAssets(parse(xml))
+    }.getOrDefault(false)
+
+    private fun shipsBuildAssets(document: Document): Boolean {
         val tags = listOf("None", "Content")
-        tags.any { tag ->
+        return tags.any { tag ->
             val nodes = document.getElementsByTagName(tag)
             (0 until nodes.length).mapNotNull { nodes.item(it) as? Element }.any {
                 it.getAttribute("Pack").equals("true", true) &&
                     it.getAttribute("PackagePath").replace('\\', '/').startsWith("build", true)
             }
         }
-    }.getOrDefault(false)
+    }
 
     private fun parse(xml: String): Document {
         val factory = DocumentBuilderFactory.newInstance()

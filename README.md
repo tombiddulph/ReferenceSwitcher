@@ -11,7 +11,7 @@ PackageReference -> Use Local Project... -> edit local source -> Restore Package
 
 ## Requirements
 
-- JetBrains Rider 2026.1.x.
+- JetBrains Rider 2025.1 or newer.
 - SDK-style .NET projects using direct `<PackageReference Include="...">` items.
 - The local project must already exist on disk.
 
@@ -49,7 +49,7 @@ The scanner:
 - Reads inherited `Directory.Build.props` values and expands `$(MSBuildProjectName)`.
 - Matches package IDs case-insensitively.
 
-Previously selected package-to-project mappings take priority. If one discovered project matches, it is selected automatically. Ambiguous matches display a chooser, and no match falls back to a file picker. The index refreshes at project startup, when settings are applied, or when **Refresh Local Projects** is selected; filesystem watching is not currently implemented.
+Previously selected package-to-project mappings take priority. If one discovered project matches, it is selected automatically. Ambiguous matches display a chooser, and no match falls back to a file picker. To avoid slowing Rider startup, the index refreshes in the background when settings are applied or when **Refresh Local Projects** is selected; filesystem watching is not currently implemented.
 
 ## Safety And Limitations
 
@@ -78,6 +78,12 @@ Requirements: JDK 21 and an internet connection for the Rider SDK dependency.
 
 ```shell
 ./gradlew test buildPlugin verifyPlugin
+```
+
+To run the generated 100-repository discovery performance fixture:
+
+```shell
+REFERENCE_SWITCHER_PERFORMANCE_TEST=true ./gradlew test --tests '*LargeProjectFixtureTest*' --info
 ```
 
 The installable archive is written to `build/distributions`.

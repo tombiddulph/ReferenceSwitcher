@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.6
+
+- Support Rider 2025.1 and newer.
+- Move local-project discovery out of Rider startup and into cancellable background tasks.
+- Cache discovered projects and reparse only projects affected by project or inherited props changes.
+- Avoid duplicate source-root scans and parse each project once during discovery.
+
 ## 0.1.5
 
 - Preserve the entire project file outside the selected reference element.

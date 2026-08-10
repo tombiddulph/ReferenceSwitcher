@@ -35,7 +35,7 @@ The plugin modifies `.csproj` files and intentionally does not attempt to reprod
 ## Initial Upload
 
 1. Build and verify with `./gradlew test buildPlugin verifyPlugin`.
-2. Upload `build/distributions/rider-reference-switcher-0.1.5.zip` through the Marketplace web form.
+2. Upload `build/distributions/rider-reference-switcher-0.1.6.zip` through the Marketplace web form.
 3. Select the Tom Biddulph vendor profile and the MIT license.
 4. Set the source, issue, and privacy links above.
 5. Declare whether the vendor is a trader or non-trader as appropriate.

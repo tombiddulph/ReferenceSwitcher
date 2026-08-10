@@ -2,6 +2,8 @@ package io.github.tombiddulph.referenceswitcher.ui
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.options.ShowSettingsUtil
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.SimpleListCellRenderer
@@ -26,6 +28,7 @@ class LocalReferencesDialog(private val project: Project) : DialogWrapper(projec
     private val model = DefaultListModel<ActiveSwitch>()
     private val list = JBList(model)
     private val discovered = JLabel()
+    private lateinit var refreshButton: JButton
 
     init {
         title = "Local References"
@@ -47,7 +50,7 @@ class LocalReferencesDialog(private val project: Project) : DialogWrapper(projec
         }
         val restore = JButton("Restore Package").apply { addActionListener { restoreSelected() } }
         val forget = JButton("Forget").apply { addActionListener { forgetSelected() } }
-        val refresh = JButton("Refresh Local Projects").apply { addActionListener { refreshDiscovery() } }
+        refreshButton = JButton("Refresh Local Projects").apply { addActionListener { refreshDiscovery() } }
         val configure = JButton("Configure Source Roots...").apply {
             addActionListener {
                 ShowSettingsUtil.getInstance().showSettingsDialog(project, ReferenceSwitcherConfigurable::class.java)
@@ -57,7 +60,7 @@ class LocalReferencesDialog(private val project: Project) : DialogWrapper(projec
         val buttons = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
             add(restore)
             add(forget)
-            add(refresh)
+            add(refreshButton)
             add(configure)
             add(discovered)
         }
@@ -88,7 +91,29 @@ class LocalReferencesDialog(private val project: Project) : DialogWrapper(projec
     }
 
     private fun refreshDiscovery() {
-        val count = ProjectDiscoveryService.getInstance(project).refresh()
-        discovered.text = "$count projects discovered"
+        val discovery = ProjectDiscoveryService.getInstance(project)
+        if (discovery.isRefreshing()) {
+            discovered.text = "Project discovery already running"
+            return
+        }
+        refreshButton.isEnabled = false
+        discovered.text = "Discovering projects..."
+        object : Task.Backgroundable(project, "Discovering Local Projects", true) {
+            override fun run(indicator: ProgressIndicator) {
+                val count = discovery.refresh()
+                indicator.text = "$count projects discovered"
+            }
+
+            override fun onSuccess() = finishRefresh(
+                "${discovery.all().size} projects discovered"
+            )
+            override fun onCancel() = finishRefresh("Project discovery cancelled")
+            override fun onThrowable(error: Throwable) = finishRefresh("Project discovery failed")
+        }.queue()
+    }
+
+    private fun finishRefresh(message: String) {
+        discovered.text = message
+        refreshButton.isEnabled = true
     }
 }

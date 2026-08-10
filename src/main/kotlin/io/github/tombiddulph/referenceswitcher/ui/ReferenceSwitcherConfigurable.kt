@@ -3,6 +3,9 @@ package io.github.tombiddulph.referenceswitcher.ui
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.Configurable
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.Task
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
@@ -22,6 +25,7 @@ class ReferenceSwitcherConfigurable : Configurable {
     private val roots = mutableListOf<String>()
     private val list = JBList(model)
     private val countLabel = JLabel()
+    private var refreshButton: JButton? = null
     private var panel: JPanel? = null
 
     override fun getDisplayName() = "Local References"
@@ -36,6 +40,7 @@ class ReferenceSwitcherConfigurable : Configurable {
             }
         }
         val refresh = JButton("Refresh Projects").apply { addActionListener { refreshProjects() } }
+        refreshButton = refresh
         val buttons = JPanel(FlowLayout(FlowLayout.LEFT, 5, 0)).apply {
             add(add)
             add(remove)
@@ -66,6 +71,7 @@ class ReferenceSwitcherConfigurable : Configurable {
 
     override fun disposeUIResources() {
         panel = null
+        refreshButton = null
     }
 
     private fun addRoot() {
@@ -82,9 +88,34 @@ class ReferenceSwitcherConfigurable : Configurable {
 
     private fun refreshProjects() {
         if (isModified) ReferenceSwitcherSettings.getInstance().replaceSourceRoots(roots)
-        val projects = ProjectManager.getInstance().openProjects
-        val count = projects.firstOrNull()?.let { ProjectDiscoveryService.getInstance(it).refresh() } ?: 0
-        countLabel.text = "$count projects discovered"
+        val project = ProjectManager.getInstance().openProjects.firstOrNull() ?: return
+        val discovery = ProjectDiscoveryService.getInstance(project)
+        if (discovery.isRefreshing()) {
+            countLabel.text = "Project discovery already running"
+            return
+        }
+        refreshButton?.isEnabled = false
+        countLabel.text = "Discovering projects..."
+        object : Task.Backgroundable(project, "Discovering Local Projects", true) {
+            override fun run(indicator: ProgressIndicator) {
+                val count = discovery.refresh()
+                indicator.text = "$count projects discovered"
+            }
+
+            override fun onSuccess() = finishRefresh(
+                project,
+                "${discovery.all().size} projects discovered",
+            )
+            override fun onCancel() = finishRefresh(project, "Project discovery cancelled")
+            override fun onThrowable(error: Throwable) = finishRefresh(project, "Project discovery failed")
+        }.queue()
+    }
+
+    private fun finishRefresh(project: Project, message: String) {
+        if (panel != null && !project.isDisposed) {
+            countLabel.text = message
+            refreshButton?.isEnabled = true
+        }
     }
 
     private fun rebuildModel() {

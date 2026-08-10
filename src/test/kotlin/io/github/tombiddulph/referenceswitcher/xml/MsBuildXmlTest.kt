@@ -110,6 +110,22 @@ class MsBuildXmlTest {
     }
 
     @Test
+    fun `extracts discovery metadata in one operation`() {
+        val metadata = MsBuildXml.discoveryMetadata(project("""
+            <PropertyGroup><PackageId>Example.Package</PackageId></PropertyGroup>
+            <ItemGroup>
+              <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+              <None Include="build/Example.targets" Pack="true" PackagePath="build/" />
+            </ItemGroup>
+        """))
+
+        assertTrue(metadata.sdkStyle)
+        assertEquals("Example.Package", metadata.properties["PackageId"])
+        assertEquals(listOf("Microsoft.CodeAnalysis.CSharp" to "all"), metadata.packageReferences)
+        assertTrue(metadata.shipsBuildAssets)
+    }
+
+    @Test
     fun `changes only selected reference text`() {
         val original = """<Project Sdk="Microsoft.NET.Sdk">
 
